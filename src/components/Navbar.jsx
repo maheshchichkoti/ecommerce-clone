@@ -231,37 +231,51 @@ function Navbar() {
         className={`fixed inset-0 z-50 flex justify-end transition-transform duration-300 ${isCartOpen ? "translate-x-0" : "translate-x-full"
           }`}
         style={{
-          backgroundColor: isCartOpen ? "rgba(0, 0, 0, 0.3)" : "transparent",
+          backgroundColor: isCartOpen ? "rgba(0, 0, 0, 0.5)" : "transparent", // Slightly darker overlay
           pointerEvents: isCartOpen ? "all" : "none",
         }}
         onClick={() => setIsCartOpen(false)}
       >
         <div
-          className={`bg-white w-full md:w-1/3 h-full shadow-lg transform transition-transform duration-500 ease-in-out ${isCartOpen ? "translate-x-0" : "translate-x-full"
+          className={`bg-white w-full md:w-1/3 h-full shadow-xl transform transition-transform duration-500 ease-in-out ${isCartOpen ? "translate-x-0" : "translate-x-full"
             }`}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex justify-between items-center p-6 border-b">
-            <h2 className="text-xl font-bold">My Cart</h2>
+          <div className="flex justify-between items-center p-4 sm:p-6 border-b"> {/* Increased padding */}
+            <h2 className="text-xl font-bold text-gray-800">My Cart</h2> {/* Darker text */}
             <button
               onClick={() => setIsCartOpen(false)}
-              className="text-gray-600 hover:text-gray-800"
+              className="text-gray-600 hover:text-gray-800 focus:outline-none" // Added focus outline none
             >
-              &#x2715;
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-          <div className="overflow-y-auto h-[calc(100%-120px)] px-6 py-4">
-            <Cart />
+          <div className="overflow-y-auto h-[calc(100%-140px)] px-4 sm:px-6 py-4"> {/* Adjusted height and padding */}
+            {itemCount === 0 ? (
+              <div className="flex flex-col justify-center items-center h-full"> {/* Centered content */}
+                <div className="text-gray-400 mb-4">
+                  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 text-center">Your cart is empty.</p> {/* More descriptive message */}
+              </div>
+            ) : (
+              <Cart /> // Reusing Cart component to display items
+            )}
           </div>
-          <div className="sticky bottom-0 bg-white p-6 border-t shadow-lg">
+          <div className="sticky bottom-0 bg-white p-4 sm:p-6 border-t shadow-lg"> {/* Increased padding */}
             <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold">Total: ${total.toFixed(2)}</span>
+              <span className="text-lg font-semibold text-gray-800">Total: ${total.toFixed(2)}</span> {/* Darker text */}
               <button
-                className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors duration-300"
+                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300 font-semibold disabled:opacity-50" // Improved button style
                 onClick={() => {
-                  setIsCartOpen(false); // Close the cart drawer
-                  navigate('/checkout'); // Navigate to the checkout page
+                  setIsCartOpen(false);
+                  navigate('/checkout');
                 }}
+                disabled={itemCount === 0} // Disable when cart is empty
               >
                 Checkout
               </button>

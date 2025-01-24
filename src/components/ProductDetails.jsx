@@ -10,12 +10,14 @@ function ProductDetails() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const data = await getProductDetails(id);
         setProduct(data);
+        console.log(data)
         setLoading(false);
       } catch (err) {
         setError(err);
@@ -28,23 +30,41 @@ function ProductDetails() {
   }, [id]);
 
   if (loading) {
-    return <div className="text-center py-8">Loading product details...</div>;
-  }
-
-  if (error || !product) {
     return (
-      <div className="text-center py-8 text-red-500">
-        Error loading product details.
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="text-4xl font-bold text-blue-600 mb-4 animate-bounce">
+          Shopi
+          <span className="inline-block w-2 h-2 bg-blue-600 rounded-full ml-0.5 animate-pulse"></span>
+        </div>
+        <div className="w-12 h-0.5 bg-blue-600/30 animate-pulse"></div>
       </div>
     );
   }
 
-  const imageUrl = product.images?.length
-    ? product.images[0]
-    : 'https://via.placeholder.com/600x400';
+  if (error || !product) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="text-red-500 mb-4">
+          <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Product Not Found</h2>
+        <p className="text-gray-600">We couldn't find the product you're looking for.</p>
+      </div>
+    );
+  }
+
+  // Parse the images array properly since it's coming as a string
+  const processedImages = product.images?.map(img => {
+    try {
+      return JSON.parse(img)[0];
+    } catch {
+      return img;
+    }
+  }) || [];
 
 
-  const { addToCart } = useCart(); // Use the useCart hook
 
   const handleAddToCart = () => {
     addToCart(product); // Call addToCart when the button is clicked
@@ -52,41 +72,78 @@ function ProductDetails() {
   };
 
   return (
-    <div className="container mx-auto py-10 px-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        {/* Product Image Carousel */}
-        <div>
-          <Swiper spaceBetween={30} slidesPerView={1} pagination={{ clickable: true }}>
-            {product.images?.map((image, index) => (
-              <SwiperSlide key={index}>
-                <img
-                  src={image}
-                  alt={`Product Image ${index}`}
-                  className="w-full rounded-lg shadow-md object-cover"
-                />
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          {/* Image Gallery */}
+          <div className="p-6 bg-gray-50">
+            <Swiper
+              spaceBetween={0}
+              slidesPerView={1}
+              pagination={{ clickable: true }}
+              className="rounded-lg overflow-hidden aspect-square"
+            >
+              {processedImages.map((image, index) => (
+                <SwiperSlide key={index}>
+                  <div className="aspect-square bg-gray-100">
+                    <img
+                      src={image || 'https://via.placeholder.com/600x600'}
+                      alt={`${product.title} - View ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
 
-        {/* Product Info Section */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-4xl font-bold text-gray-800 mb-6">{product.title}</h2>
+          {/* Product Information */}
+          <div className="p-8 flex flex-col">
+            <div className="flex-1">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.title}</h1>
+                <p className="text-sm text-gray-500">
+                  Added {new Date(product.creationAt).toLocaleDateString()}
+                </p>
+              </div>
 
-          <p className="text-lg text-gray-600 leading-relaxed mb-6">{product.description}</p>
+              <div className="mb-8">
+                <h2 className="text-4xl font-bold text-blue-600 mb-1">
+                  ${product.price.toLocaleString()}
+                </h2>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  In Stock
+                </span>
+              </div>
 
-          <p className="text-3xl font-semibold text-blue-600 mb-6">
-            ${product.price.toLocaleString()}
-          </p>
+              <div className="mb-8">
+                <h3 className="text-sm font-medium text-gray-900 mb-2">Description</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {product.description || "No description available"}
+                </p>
+              </div>
 
-          {/* Add to Cart Button */}
-          <button
-            className="bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 shadow-lg transition-transform transform hover:scale-105 w-full"
-            title="Add to Cart"
-            onClick={handleAddToCart}
-          >
-            Add to Cart
-          </button>
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-2">Category</h3>
+                <p className="text-gray-600">
+                  {product.category?.name || "Uncategorized"}
+                </p>
+              </div>
+            </div>
+
+            {/* Add to Cart Section */}
+            <div className="border-t pt-6">
+              <button
+                onClick={handleAddToCart}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 group"
+              >
+                <svg className="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                Add to Cart
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
