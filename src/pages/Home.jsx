@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getProducts } from '../api/productAPI';
 import ProductCard from '../components/ProductCard';
 import mockProducts from '../mocks/mockProducts';
-import { useParams } from 'react-router-dom'; // Import useParams
+import { useParams, useSearchParams } from 'react-router-dom'; // Import useParams
 
 function Home() {
   const [products, setProducts] = useState([]);
@@ -15,6 +15,8 @@ function Home() {
   const productsPerPage = 3;
   const [loadingMore, setLoadingMore] = useState(false);
   const [productCount, setProductCount] = useState(initialProductCount);
+  const [sortOption, setSortOption] = useState('default');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Fetch products only once on component mount
   useEffect(() => {
@@ -54,12 +56,33 @@ function Home() {
       : filteredProducts;
   }, [filteredProducts, categoryName]); // Re-calculate when filteredProducts or categoryName changes
 
+  // Sort products based on sortOption (memoized)
+  const sortedProducts = React.useMemo(() => {
+    let productsToSort = [...categoryFilteredProducts]; // Create a copy to avoid mutating original array
+    switch (sortOption) {
+      case 'price-low-to-high':
+        productsToSort.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high-to-low':
+        productsToSort.sort((a, b) => b.price - a.price);
+        break;
+      case 'newest':
+        productsToSort.sort((a, b) => new Date(b.creationAt) - new Date(a.creationAt));
+        break;
+      default:
+        break; // Default sorting (likely by API default or as fetched)
+    }
+    return productsToSort;
+  }, [categoryFilteredProducts, sortOption]);
 
   // Update displayedProducts when categoryFilteredProducts or productCount changes
   useEffect(() => {
     setDisplayedProducts(categoryFilteredProducts.slice(0, productCount));
   }, [categoryFilteredProducts, productCount]);
 
+  useEffect(() => {
+    setDisplayedProducts(sortedProducts.slice(0, productCount));
+  }, [sortedProducts, productCount]);
   // Infinite scroll logic (remains the same)
   useEffect(() => {
     const handleScroll = () => {
@@ -84,6 +107,19 @@ function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, loadingMore, displayedProducts.length, categoryFilteredProducts.length, productsPerPage]);
 
+  // Handle sort option change
+  const handleSortChange = (e) => {
+    setSortOption(e.target.value);
+    setSearchParams({ sort: e.target.value }); // Update URL param
+  };
+
+  // Read sort option from URL on initial load
+  useEffect(() => {
+    const urlSortOption = searchParams.get('sort');
+    if (urlSortOption) {
+      setSortOption(urlSortOption);
+    }
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -130,19 +166,41 @@ function Home() {
         />
       </div>
 
+      {/* Sorting Dropdown */}
+      <div className="flex justify-center mb-8"> {/* Added sorting dropdown container */}
+        <div className="relative inline-block text-left">
+          <select
+            id="sort-by"
+            className="block appearance-none bg-white border border-gray-300 hover:border-gray-500 px-4 py-2 pr-8 rounded-lg shadow-sm focus:outline-none focus:shadow-outline-blue focus:border-blue-500 text-gray-700 leading-tight"
+            value={sortOption}
+            onChange={handleSortChange}
+          >
+            <option value="default">Sort by Default</option>
+            <option value="price-low-to-high">Price: Low to High</option>
+            <option value="price-high-to-low">Price: High to Low</option>
+            <option value="newest">Newest Arrivals</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+          </div>
+        </div>
+      </div>
+
       {/* Product Listing */}
       <div className="flex flex-wrap justify-center gap-8">
-        {categoryFilteredProducts.length === 0 ? (
+        {sortedProducts.length === 0 && searchTerm !== '' ? (
           <div className="text-center py-8 text-gray-600">
-            <p>Uh oh! 🙈  Looks like the shelves are empty in this section.</p>
+            <p>No products found matching your search term.</p>
+          </div>
+        ) : sortedProducts.length === 0 && categoryName ? (
+          <div className="text-center py-8 text-gray-600">
+            <p>Uh oh! 🙈  Looks like the shelves are empty in this category.</p>
             <p>Our hamsters are working hard to restock!</p>
             <p>Try another category or search for something else. 😉</p>
           </div>
-        ) : (
-          categoryFilteredProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))
-        )}
+        ) : sortedProducts.map(product => (
+          <ProductCard key={product.id} product={product} />
+        ))}
       </div>
       {loadingMore && <div className="text-center py-4 text-gray-600">Loading more products...</div>} {/* "Loading more..." message */}
     </div>
