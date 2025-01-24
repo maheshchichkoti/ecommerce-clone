@@ -4,6 +4,7 @@ import { getProductDetails } from '../api/productAPI';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { useCart } from '../contexts/CartContext';
 import 'swiper/css';
+import Reviews from './Reviews';
 
 function ProductDetails() {
   const { id } = useParams();
@@ -145,6 +146,9 @@ function ProductDetails() {
             </div>
           </div>
         </div>
+
+        {/* Reviews Section - Add Reviews component here */}
+        <Reviews productId={Number(id)} /> {/* Pass productId to Reviews component */}
       </div>
     </div>
   );

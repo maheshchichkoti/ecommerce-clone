@@ -112,7 +112,6 @@ function Home() {
     setSortOption(e.target.value);
     setSearchParams({ sort: e.target.value }); // Update URL param
   };
-
   // Read sort option from URL on initial load
   useEffect(() => {
     const urlSortOption = searchParams.get('sort');
